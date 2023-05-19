@@ -12,8 +12,25 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-    storage: storage
+    storage: storage,
+    limits: {fileSize: 1000000},
+    fileFilter: function (req,file,cb){
+        checkFileType(file,cb)
+    }
 }).single('myImage')
+
+function checkFileType(file,cb){
+    const fileTypes = /jpeg|jpg|png|gif/
+    const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = fileTypes.test(file.mimetype);
+
+    if(mimetype && extname){
+        return cb(null,true);
+    } else {
+        cb('Error: solo se admiten imágenes')
+    }
+
+}
 
 const app = express();
 
@@ -24,17 +41,24 @@ app.use(express.static('./public'))
 app.get('/', (req,res) => res.render('index'));
 
 app.post('/upload', (req, res) => {
-    res.send('probando')
+    //res.send('probando')
     upload(req, res, (err) => {
         if(err) {
             res.render('index', {
                 msg: err
             })
-        } else{
+        } else {
             if(req.file == undefined){
-                res.render('index')
+                res.render('index',{
+                    msg: 'Error: no seleccionaste ningún archivo.'
+                })
+            } else {
+                res.render('index',{
+                    msg: 'Carga existosa del archivo.',
+                    file: `uploads/${req.file.filename}`
+                })
             }
-        }
+        } 
     });
 });
 
